@@ -1,0 +1,7 @@
+# Ignore all binary files
+*.exe
+*.out
+*.obj
+
+# Ignore compiled files inside DSA folder only
+/DSA/**/*.exe
