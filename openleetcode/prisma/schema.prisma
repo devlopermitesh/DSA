@@ -1,0 +1,269 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(uuid())
+  github_id        String   @unique
+  username         String   @unique
+  name             String?
+  email            String?
+  avatar_url       String?
+  bio              String?
+  joined_at        DateTime @default(now())
+  last_active_at   DateTime?
+  total_submissions Int     @default(0)
+  accepted         Int      @default(0)
+  points           Int      @default(0)
+  contribution_count Int    @default(0)
+  github_profile   String?
+  is_banned        Boolean  @default(false)
+  role             String   @default("user")
+  
+  accounts         Account[]
+  verifications    Verification[]
+  problems         Problem[] @relation("ProblemCreator")
+  solutions        Solution[]
+  submissions      Submission[]
+  blogs            Blog[] @relation("BlogAuthor")
+  blogLikes        BlogLike[]
+  blogComments     BlogComment[]
+  leaderboard      LeaderboardSnapshot[]
+}
+
+model Account {
+  id                 String   @id @default(uuid())
+  user               User     @relation(fields: [user_id], references: [id])
+  user_id            String
+  provider           String
+  provider_account_id String
+  access_token       String?
+  refresh_token      String?
+  expires_at         DateTime?
+  created_at         DateTime @default(now())
+}
+
+model Verification {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [user_id], references: [id])
+  user_id    String
+  token      String   @unique
+  type       String
+  expires_at DateTime?
+  created_at DateTime @default(now())
+}
+
+model Problem {
+  id         String   @id @default(uuid())
+  slug       String   @unique
+  title      String?
+  description String?
+  difficulty String
+  topic      String?
+  created_by String
+  raw_url    String?
+  meta_path  String?
+  created_at DateTime @default(now())
+
+  creator    User     @relation("ProblemCreator", fields: [created_by], references: [id])
+  testCases  TestCase[]
+  solutions  Solution[]
+  submissions Submission[]
+  tags       ProblemTagMap[]
+}
+
+model ProblemTag {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  tagMaps     ProblemTagMap[]
+}
+
+model ProblemTagMap {
+  problem    Problem @relation(fields: [problem_id], references: [id])
+  problem_id String
+
+  tag        ProblemTag @relation(fields: [tag_id], references: [id])
+  tag_id     String
+
+  created_at DateTime @default(now())
+
+  @@id([problem_id, tag_id])
+}
+
+model Solution {
+  id         String   @id @default(uuid())
+  problem    Problem  @relation(fields: [problem_id], references: [id])
+  problem_id String
+
+  user       User     @relation(fields: [user_id], references: [id])
+  user_id    String
+
+  language   String
+  raw_url    String?
+  meta_path  String?
+  created_at DateTime @default(now())
+}
+
+model Submission {
+  id            String   @id @default(uuid())
+  user          User     @relation(fields: [user_id], references: [id])
+  user_id       String
+  problem       Problem  @relation(fields: [problem_id], references: [id])
+  problem_id    String
+  language      String?
+  code          String?
+  raw_url       String?
+  result        String?
+  execution_time Float?
+  memory_used   Int?
+  created_at    DateTime @default(now())
+}
+
+model TestCase {
+  id              String   @id @default(uuid())
+  problem         Problem  @relation(fields: [problem_id], references: [id])
+  problem_id      String
+  input           String
+  expected_output String
+  is_sample       Boolean  @default(false)
+  created_at      DateTime @default(now())
+}
+
+model Blog {
+  id             String   @id @default(uuid())
+  title          String?
+  slug           String   @unique
+  content        String?
+  tags           String?
+  author         User     @relation("BlogAuthor", fields: [author_id], references: [id])
+  author_id      String
+  is_published   Boolean  @default(false)
+  is_editorial   Boolean  @default(false)
+  problem_slug   String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime?
+
+  comments       BlogComment[]
+  likes          BlogLike[]
+}
+
+model BlogComment {
+  id               String   @id @default(uuid())
+  blog             Blog     @relation(fields: [blog_id], references: [id])
+  blog_id          String
+  user             User     @relation(fields: [user_id], references: [id])
+  user_id          String
+  parent_comment   BlogComment? @relation("CommentReplies", fields: [parent_comment_id], references: [id])
+  parent_comment_id String?
+  content          String
+  created_at       DateTime @default(now())
+  is_deleted       Boolean  @default(false)
+
+  replies          BlogComment[] @relation("CommentReplies")
+}
+
+model BlogLike {
+  id         String   @id @default(uuid())
+  blog       Blog     @relation(fields: [blog_id], references: [id])
+  blog_id    String
+  user       User     @relation(fields: [user_id], references: [id])
+  user_id    String
+  created_at DateTime @default(now())
+  is_removed Boolean  @default(false)
+}
+
+model BlogTag {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  created_at  DateTime @default(now())
+}
+
+model LeaderboardSnapshot {
+  id            String   @id @default(uuid())
+  user          User?    @relation(fields: [user_id], references: [id])
+  user_id       String?
+  total_points  Int
+  rank          Int
+  week_start    DateTime
+  week_end      DateTime
+}
+
+model HomeConfig {
+  id                  String   @id @default(uuid())
+  headline            String
+  sub_headline        String?
+  call_to_action_label String  @default("Submit Solution")
+  github_repo_url     String?
+  updated_at          DateTime @default(now())
+  unique_one          Boolean  @default(true) @unique
+}
+
+model HomeStats {
+  id                    String   @id @default(uuid())
+  total_problems        Int      @default(0)
+  total_submissions     Int      @default(0)
+  total_contributors    Int      @default(0)
+  total_pull_requests   Int      @default(0)
+  total_merged_today    Int      @default(0)
+  last_updated          DateTime @default(now())
+  unique_one            Boolean  @default(true) @unique
+}
+
+model HomeAchievement {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  icon_url    String?
+  sort_order  Int      @default(0)
+  unique_one  Boolean  @default(true) @unique
+}
+
+model HomeFeature {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  highlight   Boolean  @default(false)
+  sort_order  Int      @default(0)
+  unique_one  Boolean  @default(true) @unique
+}
+
+model HomeCommitPreview {
+  id          String   @id @default(uuid())
+  author      String
+  message     String
+  snippet     String?
+  commit_url  String?
+  commit_date DateTime?
+  unique_one  Boolean  @default(true) @unique
+}
+
+model HomeContributorsPreview {
+  id             String   @id @default(uuid())
+  username       String
+  avatar_url     String?
+  points         Int      @default(0)
+  rank           Int      @default(0)
+  github_profile String?
+  unique_one     Boolean  @default(true) @unique
+}
+
+model HomeVersion {
+  id           String   @id @default(uuid())
+  module_key   String
+  updated_by   String?
+  previous_data Json?
+  updated_at   DateTime @default(now())
+}

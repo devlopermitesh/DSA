@@ -1,0 +1,21 @@
+name: Validate Solutions (Compile & Test)
+
+on:
+  pull_request:
+    paths:
+      - 'DSA/**/Solutions/**'
+
+jobs:
+  solution-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install C++ compiler
+        run: sudo apt install g++
+
+      - name: Compile and run sample
+        run: |
+          g++ DSA/Array/Problems/ReverseArray/Solutions/index.cpp -o index.out
+          echo "5 4 3 2 1" | ./index.out

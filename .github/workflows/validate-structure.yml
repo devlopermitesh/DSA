@@ -1,0 +1,17 @@
+name: Validate DSA Structure
+
+on:
+  pull_request:
+    paths:
+      - 'DSA/**'
+
+jobs:
+  structure-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Run validation script
+        run: |
+          bash scripts/validate-dsa.sh

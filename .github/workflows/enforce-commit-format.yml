@@ -1,0 +1,12 @@
+name: Enforce Commit Format
+
+on: [push]
+
+jobs:
+  commit-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lint commit messages
+        uses: wagoid/commitlint-github-action@v5
+        with:
+          configFile: commitlint.config.js

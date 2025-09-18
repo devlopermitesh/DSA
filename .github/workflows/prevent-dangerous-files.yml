@@ -1,0 +1,16 @@
+name: Prevent Dangerous Files
+
+on:
+  pull_request:
+    paths:
+      - '**.exe'
+      - '**.out'
+      - '**.class'
+
+jobs:
+  block:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "❌ .exe/.out/.class files not allowed!"
+          exit 1
